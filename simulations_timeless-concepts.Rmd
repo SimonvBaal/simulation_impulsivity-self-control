@@ -1,0 +1,162 @@
+---
+title: 'Impulsivity and Self-Control as Timeless Concepts: Simulations'
+author: "Simon van Baal"
+date: '2022-07-05'
+output: html_document
+---
+
+```{r setup}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(here)
+
+```
+
+
+```{r Generate data}
+k = .006
+delta = .003
+
+data <-
+  tibble(
+    largerLater = rep(100, 6),
+    delay = c(0, 7, 21, 60, 182.5, 365)
+  )
+
+data <- 
+  data %>%
+  mutate(hyperbolic_discountFactor = 1/(1+k*delay),
+         exponential_discountFactor = exp(-delta*delay),
+         Hyperbolic = largerLater*hyperbolic_discountFactor,
+         Exponential = largerLater*exponential_discountFactor) %>%
+  pivot_longer(cols = c(Hyperbolic, Exponential),
+               names_to = "model",
+               values_to = "discountedValue")
+
+```
+
+
+```{r Plot data}
+
+(modelComparisonPlot <- 
+  ggplot(data, 
+       aes(x = delay, y = discountedValue, col = model)) +
+  geom_point(size = 2) +
+  ylim(c(0, 100)) +
+  theme_light() +
+  labs(x = "Delay in Days",
+       y = "Discounted Present Value",
+       col = "Model") +
+  geom_function(fun = function(x) 100/(1+k*x),
+                aes(col = "Hyperbolic")) +
+  geom_function(fun = function(x) 100*exp(-delta*x),
+                aes(col = "Exponential")) +
+  scale_color_viridis_d(begin = .3, end = .7) +
+  theme(legend.position = "bottom"))
+ggsave(here("figures/plot_model-comparison.png"), width = 6, height = 4)
+
+
+
+```
+
+```{r Generate data for wrong model}
+delta2 = .001
+
+dataWrongModel <-
+  tibble(
+    largerLater = rep(100, 6),
+    delay = c(0, 7, 21, 60, 182.5, 365)
+  )
+
+dataWrongModel <- 
+  dataWrongModel %>%
+  mutate(Shallow = largerLater*exp(-delta2*delay), 
+         Steep = largerLater*exp(-delta*delay))%>%
+  pivot_longer(cols = c(Shallow, Steep),
+               names_to = "Discount Rate",
+               values_to = "discountedValue") %>%
+  mutate(ID = ifelse(`Discount Rate` == "Shallow", "P1", "P2")) %>% # Give fictional participants id. 
+  arrange(ID)
+
+```
+
+
+
+
+
+```{r Estimating hyperbolic discounting parameters}
+
+# A function for estimating the parameter for the hyperbolic discounting model
+least_squares_hyp <-
+  function(params, data) {
+    
+    k <- params[1]
+    
+    ll <- data$largerLater
+    t2 <- data$delay
+    indifP <- data$discountedValue
+    
+    est_npv_ll <- 1/(1+(t2)*k)*ll # Hyp. Discounted value
+    temporaryResults <<- 
+      data %>% 
+      cbind(est_npv_ll, rep(k, times = nrow(data))) 
+    # can check out how it works with temporaryResults 
+    return(sum((est_npv_ll-indifP)^2))
+  }
+
+resultP1 <- optim(c(.5),
+                least_squares_hyp, 
+                method = "L-BFGS-B", 
+                lower = c(.0001), upper = c(.99), 
+                control = c(maxit = 10000),
+                data = dataWrongModel %>%
+                  filter(ID == "P1"))
+
+resultP2 <- optim(c(.5),
+                least_squares_hyp, 
+                method = "L-BFGS-B", 
+                lower = c(.0001), upper = c(.99), 
+                control = c(maxit = 10000),
+                data = dataWrongModel %>%
+                  filter(ID == "P2"))
+
+dataWrongModel <- 
+  dataWrongModel %>% 
+  mutate(k = ifelse(ID == "P1", 
+                    resultP1$par, 
+                    resultP2$par))
+
+```
+
+
+
+```{r Plot data with wrong model}
+# estimate discount rate for the wrong model
+
+false_k1 = resultP1$par 
+false_k2 = resultP2$par
+
+# Create figure with the wrong model fitted to the data
+(wrongModelPlot <- 
+  ggplot(dataWrongModel, 
+       aes(x = delay, y = discountedValue, col = `Discount Rate`)) +
+  geom_point(size = 2) +
+  ylim(c(0, 100)) +
+  theme_light() +
+  labs(x = "Delay in Days",
+       y = "Discounted Present Value",
+       col = "Discount Rate") +
+  geom_function(fun = function(x) 100/(1+false_k1*x),
+                aes(col = "Shallow")) +
+  geom_function(fun = function(x) 100/(1+false_k2*x),
+                aes(col = "Steep")) +
+  scale_color_viridis_d(begin = .3, end = .7) +
+  theme(legend.position = "bottom"))
+ggsave(here("figures/plot_wrong-model.png"), width = 6, height = 4)
+
+
+```
+
+
+

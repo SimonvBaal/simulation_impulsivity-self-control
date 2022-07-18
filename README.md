@@ -31,7 +31,7 @@ renv::restore()
 To use this project, run the entire simulations_timeless-concepts.Rmd
 
 ## Support
-Should you have any problems, please send an email to simon.vanbaal1@monash.edu
+Should you have any problems, please send an email to [MASKED]
 
 ## Contributing
 This project is not open for contributions. However, if you find a mistake, 
@@ -39,8 +39,7 @@ please contact me via the email address listed above.
 
 ## Authors and acknowledgement
 I wrote the code for this project myself, but I would like to thank my 
-collaborators for their input: Lukasz Walasek, Antonio Verdejo-Garcia and Jakob 
-Hohwy.
+collaborators for their input: [MASKED]
 
 ## Project status
 This project is still under development.

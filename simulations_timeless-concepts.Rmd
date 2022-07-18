@@ -1,6 +1,6 @@
 ---
 title: 'Impulsivity and Self-Control as Timeless Concepts: Simulations'
-author: "Simon van Baal"
+author: "MASKED"
 date: '2022-07-05'
 output: html_document
 ---

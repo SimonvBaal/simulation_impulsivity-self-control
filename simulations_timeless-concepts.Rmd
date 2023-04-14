@@ -11,12 +11,14 @@ library(tidyr)
 library(ggplot2)
 library(here)
 library(renv)
-
+library(scales)
 ```
 
-
+I provide two toy examples to illustrate points in the manuscript. The
+parameter optimisation function works but is not ideal for scaling up. Please
+contact me on if you would like a more robust version.
 ```{r Generate data}
-k = .006
+k = .00545
 delta = .003
 
 data <-
@@ -39,7 +41,12 @@ data <-
 
 
 ```{r Plot data}
+# Extract colours from palette.
+scales::viridis_pal(begin = .3, end = .7)(2)
+cols <- 
+  c("#35608DFF", "#43BF71FF")
 
+# Create plot showcasing difference between two functions.
 (modelComparisonPlot <- 
   ggplot(data, 
        aes(x = delay, y = discountedValue, col = model)) +
@@ -54,14 +61,35 @@ data <-
   geom_function(fun = function(x) 100*exp(-delta*x),
                 aes(col = "Exponential")) +
   scale_color_viridis_d(begin = .3, end = .7) +
-  theme(legend.position = "bottom"))
+  theme(legend.position = "bottom")) +
+  annotate(geom = "text", 
+           x = 300, 
+           y = 75, 
+           label = "paste(italic(k)[hyp], \" = .00545 in \", days ^ -1)",
+             #"paste(italic(k) = .00545, \"in days ^ -1\")",
+           col = cols[2],
+           size = 4,
+           parse = TRUE) +
+  annotate(geom = "text", 
+           x = 300, 
+           y = 82.5, 
+           label = "paste(italic(k)[exp], \" = .003 in \", days ^ -1)",
+           col = cols[1],
+           size = 4,
+           parse = T)
+
 ggsave(here("figures/plot_model-comparison.png"), width = 6, height = 4)
 
 
 
 ```
 
-```{r Generate data for wrong model}
+```{r Generate data to be estimated by wrong model}
+# I now make a plot to illustrate the point that the hyperbolic model parameter
+# k is not able to capture convexity of the data without also increasing 
+# steepness.
+
+# Create less steep exponential function to generate comparison data
 delta2 = .001
 
 dataWrongModel <-
@@ -77,7 +105,8 @@ dataWrongModel <-
   pivot_longer(cols = c(Shallow, Steep),
                names_to = "Discount Rate",
                values_to = "discountedValue") %>%
-  mutate(ID = ifelse(`Discount Rate` == "Shallow", "P1", "P2")) %>% # Give fictional participants id. 
+  mutate(ID = ifelse(`Discount Rate` == "Shallow", "P1", "P2")) %>% 
+  # Give fictional participants ids. 
   arrange(ID)
 
 ```
@@ -140,24 +169,143 @@ false_k2 = resultP2$par
 
 # Create figure with the wrong model fitted to the data
 (wrongModelPlot <- 
+  ggplot(dataWrongModel %>%
+           mutate(k = factor(round(k, 4)),
+                  k_exp = factor(rep(c(.001, .003), each = 6))), 
+       aes(x = delay, y = discountedValue, shape = k_exp)) +
+  geom_point(size = 2, col = cols[1]) +
+  ylim(c(0, 100)) +
+  theme_light() +
+  geom_function(fun = function(x) 100/(1+false_k1*x),
+                col = cols[2],
+                aes(linetype = "0.0013")
+                ) +
+  geom_function(fun = function(x) 100/(1+false_k2*x),
+                col = cols[2],
+                aes(linetype = "0.0044")
+                ) +
+  labs(x = "Delay in Days",
+       y = "Discounted Present Value",
+       col = "Discount Function",
+       linetype = bquote(k[hyp]),
+       shape = bquote(k[exp])) +
+  theme(legend.position = "bottom"))
+
+ggsave(here("figures/plot_wrong-model.png"), width = 6, height = 4)
+
+
+```
+
+
+```{r hyperboloid plots}
+kMG1 = .005
+kMG2 = .1
+
+s1 = .7
+s2 = .01
+
+# Myerson Green 1995 model
+(hyperboloidPlot <- 
+  ggplot(dataWrongModel %>%
+           mutate(k = factor(round(k, 4)),
+                  k_exp = factor(rep(c(.001, .003), each = 6))), 
+       aes(x = delay, y = discountedValue, shape = k_exp)) +
+  geom_point(size = 2, col = cols[1]) +
+  ylim(c(0, 100)) +
+  theme_light() +
+  geom_function(fun = function(x) 100/(1+kMG1*x)^s2,
+                col = cols[2],
+                aes(linetype = "0.0013")
+                ) +
+  geom_function(fun = function(x) 100/(1+kMG2*x)^s2,
+                col = cols[2],
+                aes(linetype = "0.0044")
+                ) +
+  labs(x = "Delay in Days",
+       y = "Discounted Present Value",
+       col = "Discount Function",
+       linetype = bquote(k[hyp]),
+       shape = bquote(k[exp])) +
+  theme(legend.position = "bottom"))
+
+```
+
+
+```{r Modified Rachlin model plot}
+# Modified Rachlin plot
+
+kMR1 = .001
+kMR2 = .005
+sMR1 = 1
+sMR2 = .6
+
+
+(plotModRach <- 
+  ggplot(dataWrongModel %>%
+           mutate(k = factor(round(k, 4)),
+                  k_exp = factor(rep(c(.001, .003), each = 6))), 
+       aes(x = delay, y = discountedValue, shape = k_exp)) +
+  geom_point(size = 2, col = cols[1]) +
+  ylim(c(0, 100)) +
+  theme_light() +
+  geom_function(fun = function(x) 100/(1+(kMR1*x)^sMR2),
+                col = cols[2],
+                aes(linetype = "0.0013")
+                ) +
+  geom_function(fun = function(x) 100/(1+(kMR2*x)^sMR2),
+                col = cols[2],
+                aes(linetype = "0.0044")
+                ) +
+  labs(x = "Delay in Days",
+       y = "Discounted Present Value",
+       col = "Discount Function",
+       linetype = bquote(k[hyp]),
+       shape = bquote(k[exp])) +
+  theme(legend.position = "bottom"))
+
+```
+
+```{r constant sensitivity plot}
+
+a1 = .003
+a2 = .01
+b1 = .7
+b2 = 1
+b3 = 1.3
+b4 = .4
+
+(plotConstantSensitivity <- 
   ggplot(dataWrongModel, 
-       aes(x = delay, y = discountedValue, col = `Discount Rate`)) +
+       aes(x = delay, y = discountedValue)) +
   geom_point(size = 2) +
   ylim(c(0, 100)) +
   theme_light() +
   labs(x = "Delay in Days",
        y = "Discounted Present Value",
-       col = "Discount Rate") +
-  geom_function(fun = function(x) 100/(1+false_k1*x),
-                aes(col = "Shallow")) +
-  geom_function(fun = function(x) 100/(1+false_k2*x),
-                aes(col = "Steep")) +
+       col = "b") +
+  geom_function(fun = function(x) 100*exp(-(a1*x)^b1),
+                aes(col = ".7")) +
+  geom_function(fun = function(x) 100*exp(-(a1*x)^b2),
+                aes(col = "1")) +
+  geom_function(fun = function(x) 100*exp(-(a1*x)^b3),
+                aes(col = "1.3")) +
+    geom_function(fun = function(x) 100*exp(-(a1*x)^b4),
+                aes(col = ".4")) +
   scale_color_viridis_d(begin = .3, end = .7) +
-  theme(legend.position = "bottom"))
-ggsave(here("figures/plot_wrong-model.png"), width = 6, height = 4)
+  theme(legend.position = "bottom")) +
+  annotate(geom = "text", 
+           x = 300, 
+           y = 75, 
+           label = "paste(italic(a)[CS], \" = .003 in \", days ^ -1)",
+             #"paste(italic(k) = .00545, \"in days ^ -1\")",
+           col = "black",
+           size = 4,
+           parse = TRUE)
 
 
 ```
+
+
 
 
 

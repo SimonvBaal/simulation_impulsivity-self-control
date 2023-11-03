@@ -198,6 +198,9 @@ ggsave(here("figures/plot_wrong-model.png"), width = 6, height = 4)
 
 ```
 
+### End of figures used in paper.
+
+Here are some other models one could play around with:
 
 ```{r hyperboloid plots}
 kMG1 = .005

@@ -16,7 +16,8 @@ library(scales)
 
 I provide two toy examples to illustrate points in the manuscript. The
 parameter optimisation function works but is not ideal for scaling up. Please
-contact me on if you would like a more robust version.
+contact me if you would like a more robust version.
+
 ```{r Generate data}
 k = .00545
 delta = .003
@@ -47,6 +48,7 @@ cols <-
   c("#35608DFF", "#43BF71FF")
 
 # Create plot showcasing difference between two functions.
+
 (modelComparisonPlot <- 
   ggplot(data, 
        aes(x = delay, y = discountedValue, col = model)) +
@@ -85,12 +87,14 @@ ggsave(here("figures/plot_model-comparison.png"), width = 6, height = 4)
 
 ```
 
+
 ```{r Generate data to be estimated by wrong model}
 # I now make a plot to illustrate the point that the hyperbolic model parameter
 # k is not able to capture convexity of the data without also increasing 
 # steepness.
 
 # Create less steep exponential function to generate comparison data
+
 delta2 = .001
 
 dataWrongModel <-
@@ -202,6 +206,7 @@ ggsave(here("figures/plot_wrong-model.png"), width = 6, height = 4)
 
 Here are some other models one could play around with:
 
+
 ```{r hyperboloid plots}
 kMG1 = .005
 kMG2 = .1
@@ -309,8 +314,5 @@ b4 = .4
 
 
 ```
-
-
-
 
 

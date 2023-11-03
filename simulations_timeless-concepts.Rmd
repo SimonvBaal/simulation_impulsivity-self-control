@@ -76,7 +76,8 @@ cols <-
            label = "paste(italic(k)[exp], \" = .003 in \", days ^ -1)",
            col = cols[1],
            size = 4,
-           parse = T)
+           parse = T) +
+  coord_fixed(2)
 
 ggsave(here("figures/plot_model-comparison.png"), width = 6, height = 4)
 
@@ -189,7 +190,8 @@ false_k2 = resultP2$par
        col = "Discount Function",
        linetype = bquote(k[hyp]),
        shape = bquote(k[exp])) +
-  theme(legend.position = "bottom"))
+  theme(legend.position = "bottom")) +
+  coord_fixed(2)
 
 ggsave(here("figures/plot_wrong-model.png"), width = 6, height = 4)
 

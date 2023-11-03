@@ -5,3 +5,5 @@
 .Ruserdata
 desktop.ini
 *.png
+
+.DS_Store
